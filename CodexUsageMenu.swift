@@ -243,11 +243,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
+        terminateDuplicateInstances()
         configureStatusItem()
         refresh()
 
         timer = Timer.scheduledTimer(withTimeInterval: 300, repeats: true) { [weak self] _ in
             self?.refresh()
+        }
+    }
+
+    private func terminateDuplicateInstances() {
+        let currentPID = ProcessInfo.processInfo.processIdentifier
+        let bundleIdentifier = Bundle.main.bundleIdentifier ?? loginItemLabel
+
+        for app in NSRunningApplication.runningApplications(withBundleIdentifier: bundleIdentifier) {
+            if app.processIdentifier != currentPID {
+                app.terminate()
+            }
         }
     }
 
