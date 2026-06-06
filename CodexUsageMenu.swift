@@ -74,6 +74,17 @@ struct MeterState {
     )
 }
 
+enum IconChoice: String, CaseIterable {
+    case speedometer
+    case sparkles
+    case cpuFill = "cpu.fill"
+    case circleHexagonpathFill = "circle.hexagonpath.fill"
+    case hexagon = "hexagon"
+    case codex
+
+    var defaultsValue: String { rawValue }
+}
+
 final class UsageReader {
     private let home = FileManager.default.homeDirectoryForCurrentUser
 
@@ -234,6 +245,7 @@ enum LoginItemError: LocalizedError {
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private let loginItemLabel = "io.github.codexusagemenu.app"
+    private let iconChoiceKey = "statusIconChoice"
     private let reader = UsageReader()
     private let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
     private let menu = NSMenu()
@@ -264,10 +276,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func configureStatusItem() {
-        if let image = usageIcon() {
-            image.isTemplate = true
-            statusItem.button?.image = image
-        }
+        updateStatusIcon()
 
         setStatusTitle(shortRemaining: nil, shortReset: nil, weeklyRemaining: nil, weeklyReset: nil)
         statusItem.menu = menu
@@ -341,6 +350,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         addDisabled("Updated \(state.updatedAt.formatted(date: .omitted, time: .shortened))")
         addAction("Refresh Now", #selector(refresh))
         addAction("Open Codex Usage Page", #selector(openUsagePage))
+        addIconSubmenu()
         addCheckAction("Launch at Login", #selector(toggleStartAtLogin), checked: isStartAtLoginEnabled())
         menu.addItem(.separator())
         addAction("Quit", #selector(quit))
@@ -379,23 +389,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem.button?.attributedTitle = attributed
     }
 
-    private func usageIcon() -> NSImage? {
-        let symbols = [
-            "sparkles",
-            "circle.hexagonpath.fill",
-            "circle.hexagonpath",
-            "hexagon.fill",
-            "seal.fill",
-            "circle.circle.fill"
-        ]
-
-        for symbol in symbols {
-            if let image = NSImage(systemSymbolName: symbol, accessibilityDescription: "Codex usage token") {
-                return image
-            }
+    private func updateStatusIcon() {
+        guard let image = iconImage(for: selectedIconChoice()) else {
+            statusItem.button?.image = nil
+            return
         }
 
-        return nil
+        image.isTemplate = selectedIconChoice() != .codex
+        statusItem.button?.image = image
     }
 
     private func addDisabled(_ title: String) {
@@ -415,6 +416,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         item.target = self
         item.state = checked ? .on : .off
         menu.addItem(item)
+    }
+
+    private func addIconSubmenu() {
+        let parent = NSMenuItem(title: "Icon", action: nil, keyEquivalent: "")
+        let submenu = NSMenu(title: "Icon")
+
+        for choice in availableIconChoices() {
+            let item = NSMenuItem(title: "", action: #selector(selectIcon(_:)), keyEquivalent: "")
+            item.target = self
+            item.representedObject = choice.defaultsValue
+            item.image = iconImage(for: choice)
+            item.state = choice == selectedIconChoice() ? .on : .off
+            submenu.addItem(item)
+        }
+
+        parent.submenu = submenu
+        menu.addItem(parent)
     }
 
     private func makeState(usage: UsageResponse, local: LocalUsage?) -> MeterState {
@@ -529,6 +547,76 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         renderMenu()
+    }
+
+    @objc private func selectIcon(_ sender: NSMenuItem) {
+        guard let rawValue = sender.representedObject as? String,
+              let choice = IconChoice(rawValue: rawValue) else {
+            return
+        }
+
+        UserDefaults.standard.set(choice.defaultsValue, forKey: iconChoiceKey)
+        updateStatusIcon()
+        renderMenu()
+    }
+
+    private func selectedIconChoice() -> IconChoice {
+        if let rawValue = UserDefaults.standard.string(forKey: iconChoiceKey),
+           let choice = IconChoice(rawValue: rawValue),
+           availableIconChoices().contains(choice) {
+            return choice
+        }
+
+        return .sparkles
+    }
+
+    private func availableIconChoices() -> [IconChoice] {
+        var choices: [IconChoice] = [
+            .speedometer,
+            .sparkles,
+            .cpuFill,
+            .circleHexagonpathFill,
+            .hexagon
+        ]
+
+        if codexIconImage() != nil {
+            choices.append(.codex)
+        }
+
+        return choices
+    }
+
+    private func iconImage(for choice: IconChoice) -> NSImage? {
+        switch choice {
+        case .speedometer:
+            return NSImage(systemSymbolName: "speedometer", accessibilityDescription: "Speedometer icon")
+        case .sparkles:
+            return NSImage(systemSymbolName: "sparkles", accessibilityDescription: "Sparkles icon")
+        case .cpuFill:
+            return NSImage(systemSymbolName: "cpu.fill", accessibilityDescription: "CPU icon")
+        case .circleHexagonpathFill:
+            return NSImage(systemSymbolName: "circle.hexagonpath.fill", accessibilityDescription: "Token icon")
+        case .hexagon:
+            return NSImage(systemSymbolName: "hexagon", accessibilityDescription: "Hexagon icon")
+        case .codex:
+            return codexIconImage()
+        }
+    }
+
+    private func codexIconImage() -> NSImage? {
+        let paths = [
+            "/Applications/Codex.app/Contents/Resources/codexTemplate.png",
+            "/Applications/Codex.app/Contents/Resources/codexTemplate@2x.png",
+            "/Applications/Codex.app/Contents/Resources/app.icns"
+        ]
+
+        for path in paths {
+            if let image = NSImage(contentsOfFile: path) {
+                return image
+            }
+        }
+
+        return nil
     }
 
     private func isStartAtLoginEnabled() -> Bool {

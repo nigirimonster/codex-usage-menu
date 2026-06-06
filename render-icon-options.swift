@@ -2,24 +2,17 @@ import AppKit
 import Foundation
 
 let options: [(String, String)] = [
-    ("circle.hexagonpath.fill", "Token"),
-    ("hexagon.fill", "Hex"),
-    ("seal.fill", "Seal"),
-    ("circle.circle.fill", "Coin"),
+    ("speedometer", "Speedometer"),
     ("sparkles", "AI"),
     ("cpu.fill", "CPU"),
-    ("terminal.fill", "Terminal"),
-    ("gauge.with.dots.needle.67percent", "Gauge"),
-    ("speedometer", "Speed"),
-    ("battery.75percent", "Battery"),
-    ("chart.pie.fill", "Pie"),
-    ("chart.bar.fill", "Bars")
+    ("circle.hexagonpath.fill", "Token"),
+    ("hexagon", "Hexagon")
 ]
 
 let scale: CGFloat = 2
-let cellWidth: CGFloat = 190
-let cellHeight: CGFloat = 128
-let columns = 3
+let cellWidth: CGFloat = 220
+let cellHeight: CGFloat = 132
+let columns = 2
 let rows = Int(ceil(Double(options.count) / Double(columns)))
 let size = NSSize(width: CGFloat(columns) * cellWidth, height: CGFloat(rows) * cellHeight)
 let image = NSImage(size: size)

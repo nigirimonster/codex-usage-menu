@@ -6,6 +6,8 @@ It reads Codex remaining usage from the ChatGPT-backed Codex usage endpoint, usi
 
 ![Icon options](icon-options.png)
 
+You can switch the status icon from the dropdown `Icon` submenu. The public repo includes the built-in symbol options; if the OpenAI Codex desktop app is installed locally, the app also offers its installed Codex icon as a local-only choice at runtime.
+
 ## Notes
 
 - This does not send prompts or start Codex turns. Refreshing should not consume model tokens.
