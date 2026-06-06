@@ -1,0 +1,18 @@
+# Build output
+build/
+*.app
+*.dSYM
+
+# Swift/compiler cache
+.build/
+DerivedData/
+*.swiftmodule
+*.swiftdoc
+*.swiftsourceinfo
+
+# macOS metadata
+.DS_Store
+
+# Local archives
+*.zip
+*.tar.gz
